@@ -1,0 +1,57 @@
+services:
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: enterprise-knowledge-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: krishgupta
+      POSTGRES_PASSWORD: krishpassword
+      POSTGRES_DB: enterprise_knowledge
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    container_name: enterprise-knowledge-backend
+    restart: unless-stopped
+
+    environment:
+      DATABASE_URL: postgresql://krishgupta:krishpassword@db:5432/enterprise_knowledge
+      GROQ_API_KEY: ${GROQ_API_KEY}
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      - db
+
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+
+    container_name: enterprise-knowledge-frontend
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      - backend
+
+
+volumes:
+  postgres_data:
